@@ -1,0 +1,2 @@
+CS101|Programming Fundamentals|3|TCH001
+MA101|Calculus|3|TCH002

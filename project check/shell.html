@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>University Management System</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
+  <style>
+    :root {
+      --bg-gradient: linear-gradient(135deg, #f0f4f8 0%, #e2e8f0 100%);
+      --bg-sidebar: #ffffff;
+      --text-dark: #1e293b;
+      --text-muted: #64748b;
+      --primary-gradient: linear-gradient(90deg, #4f46e5, #3b82f6);
+      --icon-blue: linear-gradient(135deg, #60a5fa, #2563eb);
+      --icon-purple: linear-gradient(135deg, #c084fc, #9333ea);
+      --shadow-card: 0 10px 25px rgba(0,0,0,0.05);
+      --shadow-button: 0 4px 15px rgba(79, 70, 229, 0.4);
+      --border-color: #e2e8f0;
+      --danger: #ef4444;
+      --success: #10b981;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+    body { background: var(--bg-gradient); color: var(--text-dark); height: 100vh; display: flex; overflow: hidden; }
+    #login-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: var(--bg-gradient); z-index: 50; }
+    .login-card { background: #fff; padding: 50px 40px; border-radius: 24px; width: 100%; max-width: 420px; box-shadow: var(--shadow-card); animation: floatUp 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
+    .login-card h1 { font-size: 28px; text-align: center; margin-bottom: 35px; font-weight: 800; }
+    #dashboard { display: flex; width: 100%; height: 100%; }
+    .sidebar { width: 280px; background: var(--bg-sidebar); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; padding: 30px 20px; box-shadow: 4px 0 24px rgba(0,0,0,0.02); z-index: 10; }
+    .sidebar h2 { font-size: 22px; margin-bottom: 35px; display: flex; align-items: center; gap: 12px; padding-left: 15px; font-weight: 800; }
+    .nav-btn { display: flex; align-items: center; gap: 12px; padding: 14px 20px; text-align: left; background: transparent; border: none; color: var(--text-muted); font-size: 15px; font-weight: 600; cursor: pointer; border-radius: 50px; transition: all 0.3s ease; margin-bottom: 8px; }
+    .nav-btn:hover { background: #f8fafc; color: var(--text-dark); }
+    .nav-btn.active { background: var(--primary-gradient); color: #fff; box-shadow: var(--shadow-button); }
+    .logout-btn { margin-top: auto; background: #fee2e2; color: var(--danger); border-radius: 50px; }
+    .main-content { flex-grow: 1; padding: 50px; overflow-y: auto; position: relative; }
+    .page-title { font-size: 32px; margin-bottom: 40px; font-weight: 800; letter-spacing: -0.5px; }
+    .stats-row { display: flex; gap: 30px; margin-bottom: 40px; max-width: 900px; }
+    .stat-card { background: #fff; border-radius: 20px; padding: 30px; flex: 1; box-shadow: var(--shadow-card); border: 1px solid var(--border-color); display: flex; align-items: center; gap: 20px; position: relative; overflow: hidden; transition: transform 0.2s ease; }
+    .stat-card:hover { transform: translateY(-5px); }
+    .stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 5px; background: var(--primary-gradient); }
+    .stat-card:nth-child(2)::before { background: linear-gradient(90deg, #c084fc, #9333ea); }
+    .stat-icon { width: 64px; height: 64px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; }
+    .stat-icon.blue { background: var(--icon-blue); box-shadow: 0 0 20px rgba(59, 130, 246, 0.4); }
+    .stat-icon.purple { background: var(--icon-purple); box-shadow: 0 0 20px rgba(147, 51, 234, 0.4); }
+    .stat-info { display: flex; flex-direction: column; }
+    .stat-value { font-size: 36px; font-weight: 800; line-height: 1.1; margin-top: 5px; }
+    .stat-label { font-size: 15px; font-weight: 500; }
+    .grid-form { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; margin-bottom: 30px; max-width: 900px; }
+    .form-group { display: flex; flex-direction: column; gap: 8px; }
+    label { font-size: 13px; font-weight: 500; color: var(--text-muted); }
+    input, select { padding: 14px 16px; border-radius: 12px; border: 1px solid var(--border-color); background: #fff; color: var(--text-dark); font-size: 15px; transition: all 0.2s ease; outline: none; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
+    input:focus, select:focus { border-color: #6366f1; box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1); }
+    button.btn { padding: 14px 28px; border-radius: 50px; border: none; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; background: var(--primary-gradient); color: white; display: inline-flex; align-items: center; gap: 8px; box-shadow: var(--shadow-button); }
+    button.btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(79, 70, 229, 0.5); }
+    button.btn:active { transform: translateY(0); }
+    button.btn.secondary { background: #fff; color: var(--text-dark); border: 1px solid var(--border-color); box-shadow: var(--shadow-card); }
+    button.btn.danger { background: var(--danger); box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4); }
+    .result-card { background: #fff; border-radius: 20px; box-shadow: var(--shadow-card); padding: 30px; margin-top: 30px; overflow-x: auto; border: 1px solid var(--border-color); }
+    table { width: 100%; border-collapse: collapse; text-align: left; }
+    th { padding: 16px; font-size: 13px; color: var(--text-muted); font-weight: 600; border-bottom: 2px solid var(--border-color); }
+    td { padding: 16px; font-size: 15px; border-bottom: 1px solid #f1f5f9; }
+    .chart-container { max-width: 300px; margin: 30px auto; position: relative; }
+    .msg-box { padding: 16px; border-radius: 12px; font-weight: 500; margin-top: 20px; display: none; font-size: 14px; }
+    .msg-success { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
+    .msg-error { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+    .hidden { display: none !important; }
+    .tab-content { display: none; animation: fadeIn 0.4s ease; }
+    .tab-content.active { display: block; }
+    .summary { background: #f8fafc; padding: 20px; border-radius: 12px; margin-top: 20px; font-size: 16px; text-align: center; border: 1px solid var(--border-color); }
+    .error { color: var(--danger); font-weight: 600; padding: 20px; background: #fef2f2; border-radius: 12px; text-align: center; border: 1px solid #fecaca; }
+    @keyframes floatUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  </style>
+</head>
+<body>
+
+  <div id="login-screen">
+    <div class="login-card">
+      <h1>UMS Portal</h1>
+      <div class="form-group" style="margin-bottom: 20px;"><label>Role</label><select id="role"><option value="student">Student</option><option value="teacher">Teacher</option><option value="admin">Admin</option></select></div>
+      <div class="form-group" style="margin-bottom: 20px;"><label>ID</label><input type="text" id="login-id" placeholder="Enter your ID"></div>
+      <div class="form-group" style="margin-bottom: 30px;"><label>Password</label><input type="password" id="login-pass" placeholder="Enter your password"></div>
+      <button class="btn" style="width: 100%; justify-content: center;" onclick="doLogin()">Sign In</button>
+      <div id="login-error" class="msg-box msg-error">Invalid Credentials</div>
+    </div>
+  </div>
+
+  <div id="dashboard" class="hidden">
+    <div class="sidebar">
+      <h2><i data-lucide="graduation-cap" style="width: 30px; height: 30px; color: #1e293b;"></i> UMS</h2>
+      <div id="nav-admin" class="hidden">
+        <button class="nav-btn active" onclick="switchTab('admin', 'tab-add-student', this)"><i data-lucide="graduation-cap"></i> Add Student</button>
+        <button class="nav-btn" onclick="switchTab('admin', 'tab-update-student', this)"><i data-lucide="edit"></i> Update / Delete</button>
+        <button class="nav-btn" onclick="switchTab('admin', 'tab-add-teacher', this)"><i data-lucide="users"></i> Add Teacher</button>
+        <button class="nav-btn" onclick="switchTab('admin', 'tab-add-course', this)"><i data-lucide="layers"></i> Add Course</button>
+        <button class="nav-btn" onclick="switchTab('admin', 'tab-view-data', this)"><i data-lucide="file-text"></i> View Records</button>
+      </div>
+      <div id="nav-teacher" class="hidden">
+        <button class="nav-btn active" onclick="switchTab('teacher', 'tab-enter-marks', this)"><i data-lucide="pen-tool"></i> Enter Marks</button>
+        <button class="nav-btn" onclick="switchTab('teacher', 'tab-mark-attendance', this)"><i data-lucide="check-square"></i> Mark Attendance</button>
+        <button class="nav-btn" onclick="switchTab('teacher', 'tab-view-student', this)"><i data-lucide="search"></i> View Result</button>
+        <button class="nav-btn" onclick="switchTab('teacher', 'tab-view-roster', this)"><i data-lucide="clipboard-list"></i> Course Roster</button>
+      </div>
+      <div id="nav-student" class="hidden">
+        <button class="nav-btn active" onclick="switchTab('student', 'tab-student-result', this)"><i data-lucide="file-text"></i> My Result</button>
+        <button class="nav-btn" onclick="switchTab('student', 'tab-student-attendance', this)"><i data-lucide="pie-chart"></i> My Attendance</button>
+      </div>
+      <button class="nav-btn logout-btn" onclick="logout()"><i data-lucide="log-out"></i> Logout</button>
+    </div>
+
+    <div class="main-content">
+      <div id="view-admin" class="hidden">
+        <div id="tab-add-student" class="tab-content active">
+          <h2 class="page-title">Admin Dashboard</h2>
+          <div class="stats-row">
+            <div class="stat-card">
+              <div class="stat-icon blue"><i data-lucide="graduation-cap" style="width: 32px; height: 32px;"></i></div>
+              <div class="stat-info"><div class="stat-label">Total Students</div><div class="stat-value" id="stat-students">0</div></div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon purple"><i data-lucide="library" style="width: 32px; height: 32px;"></i></div>
+              <div class="stat-info"><div class="stat-label">Active Courses</div><div class="stat-value" id="stat-courses">0</div></div>
+            </div>
+          </div>
+          <h3 style="margin-bottom: 20px; font-size: 24px; font-weight: 700;">Add New Student</h3>
+          <div class="grid-form">
+            <div class="form-group"><label>Student ID</label><input type="text" id="a-s-id"></div>
+            <div class="form-group"><label>Password</label><input type="text" id="a-s-pass"></div>
+            <div class="form-group"><label>Full Name</label><input type="text" id="a-s-name"></div>
+            <div class="form-group"><label>Program</label><input type="text" id="a-s-prog"></div>
+            <div class="form-group"><label>Semester</label><input type="text" id="a-s-sem"></div>
+          </div>
+          <button class="btn" onclick="adminAddStudent()">Save Student</button>
+          <div id="msg-add-student" class="msg-box"></div>
+        </div>
+
+        <div id="tab-update-student" class="tab-content">
+          <h2 class="page-title">Update or Delete Student</h2>
+          <div class="grid-form">
+            <div class="form-group"><label>Student ID (Required)</label><input type="text" id="a-u-id"></div>
+            <div class="form-group"><label>New Password</label><input type="text" id="a-u-pass"></div>
+            <div class="form-group"><label>New Name</label><input type="text" id="a-u-name"></div>
+            <div class="form-group"><label>New Program</label><input type="text" id="a-u-prog"></div>
+            <div class="form-group"><label>New Semester</label><input type="text" id="a-u-sem"></div>
+          </div>
+          <div style="display: flex; gap: 15px;">
+            <button class="btn" onclick="adminUpdateStudent()">Update Student</button>
+            <button class="btn danger" onclick="adminDeleteStudent()">Delete Student</button>
+          </div>
+          <div id="msg-update-student" class="msg-box"></div>
+        </div>
+
+        <div id="tab-add-teacher" class="tab-content">
+          <h2 class="page-title">Add New Teacher</h2>
+          <div class="grid-form">
+            <div class="form-group"><label>Teacher ID</label><input type="text" id="a-t-id"></div>
+            <div class="form-group"><label>Full Name</label><input type="text" id="a-t-name"></div>
+            <div class="form-group"><label>Department</label><input type="text" id="a-t-dept"></div>
+          </div>
+          <button class="btn" onclick="adminAddTeacher()">Save Teacher</button>
+          <div id="msg-add-teacher" class="msg-box"></div>
+        </div>
+
+        <div id="tab-add-course" class="tab-content">
+          <h2 class="page-title">Add New Course</h2>
+          <div class="grid-form">
+            <div class="form-group"><label>Course Code</label><input type="text" id="a-c-code"></div>
+            <div class="form-group"><label>Course Title</label><input type="text" id="a-c-title"></div>
+            <div class="form-group"><label>Credit Hours</label><input type="text" id="a-c-cr"></div>
+            <div class="form-group"><label>Assign Teacher</label><select id="a-c-tid"><option value="">Select a Teacher</option></select></div>
+          </div>
+          <button class="btn" onclick="adminAddCourse()">Save Course</button>
+          <div id="msg-add-course" class="msg-box"></div>
+        </div>
+
+        <div id="tab-view-data" class="tab-content">
+          <h2 class="page-title">System Records</h2>
+          <div style="display: flex; gap: 15px; margin-bottom: 30px;">
+            <button class="btn secondary" onclick="loadData('api_admin_list_students', 'admin-table')">All Students</button>
+            <button class="btn secondary" onclick="loadData('api_admin_list_courses', 'admin-table')">All Courses</button>
+          </div>
+          <div id="admin-table" class="result-card hidden"></div>
+        </div>
+      </div>
+
+      <div id="view-teacher" class="hidden">
+        <div id="tab-enter-marks" class="tab-content active">
+          <h2 class="page-title">Enter / Update Marks</h2>
+          <div class="grid-form">
+            <div class="form-group"><label>Student ID</label><input type="text" id="t-m-sid"></div>
+            <div class="form-group"><label>Course Code</label><input type="text" id="t-m-code"></div>
+            <div class="form-group"><label>Marks (0-100)</label><input type="text" id="t-m-marks"></div>
+          </div>
+          <button class="btn" onclick="teacherEnterMarks()">Submit Marks</button>
+          <div id="msg-enter-marks" class="msg-box"></div>
+        </div>
+        <div id="tab-mark-attendance" class="tab-content">
+          <h2 class="page-title">Mark Attendance</h2>
+          <div class="grid-form">
+            <div class="form-group"><label>Student ID</label><input type="text" id="t-a-sid"></div>
+            <div class="form-group"><label>Course Code</label><input type="text" id="t-a-code"></div>
+            <div class="form-group"><label>Status</label><select id="t-a-status"><option value="1">Present</option><option value="0">Absent</option></select></div>
+          </div>
+          <button class="btn" onclick="teacherMarkAttendance()">Submit Attendance</button>
+          <div id="msg-attendance" class="msg-box"></div>
+        </div>
+        <div id="tab-view-student" class="tab-content">
+          <h2 class="page-title">View Student Result</h2>
+          <div class="grid-form"><div class="form-group"><label>Student ID</label><input type="text" id="t-v-sid"></div></div>
+          <button class="btn" onclick="teacherViewStudent()">Search Result</button>
+          <div id="teacher-result" class="result-card hidden"></div>
+        </div>
+        <div id="tab-view-roster" class="tab-content">
+          <h2 class="page-title">View Course Roster</h2>
+          <div class="grid-form"><div class="form-group"><label>Course Code</label><input type="text" id="t-r-code"></div></div>
+          <button class="btn" onclick="teacherViewRoster()">Get Roster</button>
+          <div id="teacher-roster" class="result-card hidden"></div>
+        </div>
+      </div>
+
+      <div id="view-student" class="hidden">
+        <div id="tab-student-result" class="tab-content active">
+          <h2 class="page-title">My Result Card</h2>
+          <div id="chart-wrapper" class="hidden"><div class="chart-container"><canvas id="gpaChart"></canvas></div></div>
+          <button class="btn" onclick="loadData('api_get_student_result', 'student-result', [currentUser])">Refresh My Result</button>
+          <div id="student-result" class="result-card hidden"></div>
+        </div>
+        <div id="tab-student-attendance" class="tab-content">
+          <h2 class="page-title">My Attendance</h2>
+          <button class="btn" onclick="loadAttendanceChart()">Refresh Attendance</button>
+          <div id="attendance-chart-wrapper" class="result-card hidden" style="display: flex; flex-direction: column; align-items: center;">
+            <div style="width: 100%; max-width: 350px; margin-bottom: 20px;"><canvas id="attendanceChart"></canvas></div>
+            <div id="attendance-details" style="width: 100%;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    lucide.createIcons();
+
+    // --- CLOUD DATABASE CONFIGURATION ---
+    const PANTRY_ID = "0291ed06-2a0a-4b9a-9beb-58d61889356b";
+    const BASKET_NAME = "ums_db";
+
+    // --- BULLETPROOF MODULE SETUP ---
+    var Module = {
+      preRun: [function() { FS.mkdir('/data'); FS.mount(IDBFS, {}, '/data'); }],
+      onRuntimeInitialized: async function() {
+        console.log("WASM Loaded. Initializing DB...");
+        
+        let cloudHasData = false;
+        
+        // 1. Try to fetch from Cloud
+        try {
+            console.log("Fetching from Cloud...");
+            let res = await fetch(`https://getpantry.cloud/apiv1/pantry/${PANTRY_ID}/basket/${BASKET_NAME}`);
+            
+            if (res.status === 200) {
+                let data = await res.json();
+                if (data && data.students !== undefined) {
+                    FS.writeFile('/data/students.txt', data.students || "");
+                    FS.writeFile('/data/teachers.txt', data.teachers || "");
+                    FS.writeFile('/data/courses.txt', data.courses || "");
+                    FS.writeFile('/data/marks.txt', data.marks || "");
+                    FS.writeFile('/data/attendance.txt', data.atts || "");
+                    cloudHasData = true;
+                    console.log("Cloud data successfully pulled!");
+                }
+            } else if (res.status === 400) {
+                console.log("Cloud is empty. Using local data.");
+            }
+        } catch(e) { 
+            console.log("Cloud fetch failed (Adblock?). Using local data."); 
+        }
+
+        // 2. If no Cloud data was found, load from Local IndexedDB
+        if (!cloudHasData) {
+            await new Promise(resolve => FS.syncfs(true, resolve));
+            console.log("Loaded from local IndexedDB.");
+        }
+
+        // 3. Initialize C Database
+        Module.ccall('api_init_db', null, [], []);
+        
+        // 4. Save to local IndexedDB
+        FS.syncfs(false, function(err) {});
+      }
+    };
+
+    function saveToCloud() {
+        FS.syncfs(false, function(err) {
+            let students = ""; try { students = FS.readFile('/data/students.txt', {encoding: 'utf8'}) } catch(e){}
+            let teachers = ""; try { teachers = FS.readFile('/data/teachers.txt', {encoding: 'utf8'}) } catch(e){}
+            let courses = ""; try { courses = FS.readFile('/data/courses.txt', {encoding: 'utf8'}) } catch(e){}
+            let marks = ""; try { marks = FS.readFile('/data/marks.txt', {encoding: 'utf8'}) } catch(e){}
+            let atts = ""; try { atts = FS.readFile('/data/attendance.txt', {encoding: 'utf8'}) } catch(e){}
+            
+            let payload = { students, teachers, courses, marks, atts };
+            fetch(`https://getpantry.cloud/apiv1/pantry/${PANTRY_ID}/basket/${BASKET_NAME}`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(payload)
+            })
+            .then(res => { 
+                if(res.ok) console.log("Pushed to Cloud successfully."); 
+                else console.log("Failed to push to cloud:", res.status);
+            })
+            .catch(err => console.error("Cloud push error:", err));
+        });
+    }
+
+    var currentUser = ""; var currentRole = ""; var myGpaChart = null; var attChart = null;
+
+    function doLogin() {
+      var role = document.getElementById('role').value; var id = document.getElementById('login-id').value; var pass = document.getElementById('login-pass').value;
+      var res = Module.ccall('api_login', 'number', ['string', 'string', 'string'], [role, id, pass]);
+      if (res > 0) {
+        currentUser = id; currentRole = role;
+        document.getElementById('login-screen').classList.add('hidden');
+        document.getElementById('dashboard').classList.remove('hidden');
+        document.getElementById('nav-' + role).classList.remove('hidden');
+        document.getElementById('view-' + role).classList.remove('hidden');
+        if(role === 'student') { loadData('api_get_student_result', 'student-result', [currentUser]); }
+        else if (role === 'admin') { updateAdminStats(); loadTeacherDropdown(); }
+      } else { 
+        var err = document.getElementById('login-error'); err.style.display = 'block'; setTimeout(() => err.style.display = 'none', 3000);
+      }
+    }
+
+    function logout() { location.reload(); }
+
+    function switchTab(role, tabId, btn) {
+      var btns = document.getElementById('nav-' + role).getElementsByTagName('button');
+      for (var i = 0; i < btns.length; i++) { btns[i].classList.remove('active'); }
+      btn.classList.add('active');
+      var container = document.getElementById('view-' + role);
+      var tabs = container.getElementsByClassName('tab-content');
+      for (var i = 0; i < tabs.length; i++) { tabs[i].classList.remove('active'); }
+      document.getElementById(tabId).classList.add('active');
+      if (tabId === 'tab-student-attendance') { loadAttendanceChart(); }
+      else if (tabId === 'tab-student-result') { loadData('api_get_student_result', 'student-result', [currentUser]); }
+      else if (tabId === 'tab-view-data') { loadData('api_admin_list_students', 'admin-table'); }
+    }
+
+    function showMsg(divId, text) {
+      var el = document.getElementById(divId); el.innerText = text;
+      el.className = text.includes("Error") || text.includes("DENIED") ? "msg-box msg-error" : "msg-box msg-success";
+      el.style.display = "block"; setTimeout(() => el.style.display = "none", 4000);
+    }
+
+    function loadData(funcName, divId, args = []) {
+      var res = Module.ccall(funcName, 'string', args.map(() => 'string'), args);
+      var div = document.getElementById(divId); div.innerHTML = res; div.classList.remove('hidden');
+      if (divId === 'student-result') { drawGpaChart(res); }
+    }
+
+    const centerTextPlugin = {
+      id: 'centerText',
+      beforeDraw: function(chart) {
+        var width = chart.width, height = chart.height, ctx = chart.ctx; ctx.save();
+        var fontSize = Math.round(height / 10);
+        ctx.font = "bold " + fontSize + "px 'Inter', sans-serif"; ctx.textBaseline = "middle"; ctx.textAlign = "center"; ctx.fillStyle = "#1e293b";
+        var text = chart.config.options.plugins.centerText.text; var textY = height / 2.2; ctx.fillText(text, width / 2, textY);
+        var subFontSize = Math.round(fontSize * 0.35);
+        ctx.font = subFontSize + "px 'Inter', sans-serif"; ctx.fillStyle = "#64748b";
+        var subText = chart.config.options.plugins.centerText.subtext; ctx.fillText(subText, width / 2, textY + (fontSize * 0.75));
+        ctx.restore();
+      }
+    };
+
+    function drawGpaChart(htmlString) {
+      var match = htmlString.match(/GPA:<\/b>\s*([\d.]+)/);
+      if (!match) return; var gpa = parseFloat(match[1]); var remaining = 4.0 - gpa;
+      document.getElementById('chart-wrapper').classList.remove('hidden');
+      var ctx = document.getElementById('gpaChart').getContext('2d');
+      if (myGpaChart) { myGpaChart.destroy(); }
+      myGpaChart = new Chart(ctx, {
+        type: 'doughnut', data: { labels: ['Achieved GPA', 'Remaining'], datasets: [{ data: [gpa, remaining], backgroundColor: ['#4f46e5', '#e2e8f0'], borderWidth: 0, cutout: '80%' }] },
+        options: { responsive: true, plugins: { legend: { display: false }, tooltip: { enabled: false }, centerText: { text: gpa.toFixed(2), subtext: "GPA" } }, animation: { animateScale: true, animateRotate: true } },
+        plugins: [centerTextPlugin]
+      });
+    }
+
+    function teacherMarkAttendance() {
+      var res = Module.ccall('api_teacher_mark_attendance', 'string', ['string','string','string','string'], [currentUser, document.getElementById('t-a-code').value, document.getElementById('t-a-sid').value, document.getElementById('t-a-status').value]);
+      showMsg('msg-attendance', res);
+      if(res.includes("Success")) { saveToCloud(); }
+    }
+
+    function loadAttendanceChart() {
+      var res = Module.ccall('api_get_student_attendance_json', 'string', ['string'], [currentUser]);
+      document.getElementById('attendance-chart-wrapper').classList.remove('hidden');
+      var data = JSON.parse(res);
+      if(data.length === 0) { document.getElementById('attendance-details').innerHTML = "<p style='text-align:center; color:var(--text-muted);'>No records.</p>"; return; }
+      var totalAttended = 0; var totalClasses = 0;
+      var detailsHTML = "<table style='margin-top:10px;'><tr><th>Course</th><th>Attended</th><th>Total</th><th>Percentage</th></tr>";
+      data.forEach(d => {
+        totalAttended += d.attended; totalClasses += d.total;
+        var color = d.percent < 75 ? 'var(--danger)' : 'var(--success)';
+        detailsHTML += `<tr><td><b>${d.course}</b></td><td>${d.attended}</td><td>${d.total}</td><td style="color: ${color}; font-weight: bold;">${d.percent.toFixed(1)}%</td></tr>`;
+      });
+      detailsHTML += "</table>"; document.getElementById('attendance-details').innerHTML = detailsHTML;
+      var overallPercent = totalClasses > 0 ? ((totalAttended / totalClasses) * 100).toFixed(1) : 0;
+      var missed = totalClasses - totalAttended;
+      var ctx = document.getElementById('attendanceChart').getContext('2d');
+      if (attChart) { attChart.destroy(); }
+      attChart = new Chart(ctx, {
+        type: 'doughnut', data: { labels: ['Present', 'Absent'], datasets: [{ data: [totalAttended, missed], backgroundColor: ['#10b981', '#ef4444'], borderWidth: 0, cutout: '75%' }] },
+        options: { responsive: true, plugins: { legend: { position: 'bottom' }, centerText: { text: overallPercent + "%", subtext: "Overall" } }, animation: { animateScale: true, animateRotate: true } },
+        plugins: [centerTextPlugin]
+      });
+    }
+
+    function updateAdminStats() {
+      var resStudents = Module.ccall('api_admin_list_students', 'string', [], []);
+      var resCourses = Module.ccall('api_admin_list_courses', 'string', [], []);
+      document.getElementById('stat-students').innerText = (resStudents.match(/<tr>/g) || []).length - 1;
+      document.getElementById('stat-courses').innerText = (resCourses.match(/<tr>/g) || []).length - 1;
+    }
+
+    function loadTeacherDropdown() {
+      var res = Module.ccall('api_admin_get_teachers', 'string', [], []);
+      var select = document.getElementById('a-c-tid'); select.innerHTML = '<option value="">Select a Teacher</option>';
+      if (res && res.trim() !== "") {
+        var lines = res.trim().split('\n');
+        for (var i = 0; i < lines.length; i++) {
+          var parts = lines[i].split('|');
+          if (parts.length === 2) { var opt = document.createElement('option'); opt.value = parts[0]; opt.text = parts[1] + ' (' + parts[0] + ')'; select.appendChild(opt); }
+        }
+      }
+    }
+
+    function adminAddStudent() {
+      var res = Module.ccall('api_admin_add_student', 'string', ['string','string','string','string','string'], [document.getElementById('a-s-id').value, document.getElementById('a-s-pass').value, document.getElementById('a-s-name').value, document.getElementById('a-s-prog').value, document.getElementById('a-s-sem').value]);
+      showMsg('msg-add-student', res); if(res.includes("Success")) { saveToCloud(); loadData('api_admin_list_students', 'admin-table'); updateAdminStats(); }
+    }
+    function adminUpdateStudent() {
+      var res = Module.ccall('api_admin_update_student', 'string', ['string','string','string','string','string'], [document.getElementById('a-u-id').value, document.getElementById('a-u-name').value, document.getElementById('a-u-prog').value, document.getElementById('a-u-sem').value, document.getElementById('a-u-pass').value]);
+      showMsg('msg-update-student', res); if(res.includes("Success")) { saveToCloud(); loadData('api_admin_list_students', 'admin-table'); updateAdminStats(); }
+    }
+    function adminDeleteStudent() {
+      var res = Module.ccall('api_admin_delete_student', 'string', ['string'], [document.getElementById('a-u-id').value]);
+      showMsg('msg-update-student', res); if(res.includes("Success")) { saveToCloud(); loadData('api_admin_list_students', 'admin-table'); updateAdminStats(); }
+    }
+    function adminAddTeacher() {
+      var res = Module.ccall('api_admin_add_teacher', 'string', ['string','string','string','string'], [document.getElementById('a-t-id').value, "1234", document.getElementById('a-t-name').value, document.getElementById('a-t-dept').value]);
+      showMsg('msg-add-teacher', res); if(res.includes("Success")) { saveToCloud(); loadData('api_admin_list_courses', 'admin-table'); loadTeacherDropdown(); }
+    }
+    function adminAddCourse() {
+      var res = Module.ccall('api_admin_add_course', 'string', ['string','string','string','string'], [document.getElementById('a-c-code').value, document.getElementById('a-c-title').value, document.getElementById('a-c-cr').value, document.getElementById('a-c-tid').value]);
+      showMsg('msg-add-course', res); if(res.includes("Success")) { saveToCloud(); loadData('api_admin_list_courses', 'admin-table'); updateAdminStats(); }
+    }
+    function teacherEnterMarks() {
+      var res = Module.ccall('api_teacher_enter_marks', 'string', ['string','string','string','string'], [currentUser, document.getElementById('t-m-code').value, document.getElementById('t-m-sid').value, document.getElementById('t-m-marks').value]);
+      showMsg('msg-enter-marks', res); if(res.includes("Success")) { saveToCloud(); }
+    }
+    function teacherViewStudent() {
+      var res = Module.ccall('api_teacher_view_student', 'string', ['string','string'], [currentUser, document.getElementById('t-v-sid').value]);
+      var div = document.getElementById('teacher-result'); div.innerHTML = res; div.classList.remove('hidden');
+    }
+    function teacherViewRoster() {
+      var res = Module.ccall('api_teacher_list_roster', 'string', ['string','string'], [currentUser, document.getElementById('t-r-code').value]);
+      var div = document.getElementById('teacher-roster'); div.innerHTML = res; div.classList.remove('hidden');
+    }
+  </script>
+  {{{ SCRIPT }}}
+</body>
+</html>
